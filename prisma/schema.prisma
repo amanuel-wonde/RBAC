@@ -1,0 +1,222 @@
+// Prisma Schema for USEDAMS
+// Unified Secure Employee & Document Access Management System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum SecurityLevel {
+  PUBLIC
+  INTERNAL
+  CONFIDENTIAL
+}
+
+enum EmploymentStatus {
+  ACTIVE
+  ON_LEAVE
+  TERMINATED
+}
+
+enum JobLevel {
+  JUNIOR
+  SENIOR
+  MANAGER
+  EXECUTIVE
+}
+
+enum LogStatus {
+  SUCCESS
+  FAILED
+  DENIED
+}
+
+enum BackupStatus {
+  SUCCESS
+  FAILED
+}
+
+enum RuleAction {
+  ALLOW
+  DENY
+}
+
+// 1. Users Table
+model User {
+  id                  String           @id @default(cuid())
+  name                String
+  email               String           @unique
+  passwordHash        String
+  roleId              String
+  role                Role             @relation(fields: [roleId], references: [id])
+  department          String?
+  employmentStatus    EmploymentStatus @default(ACTIVE)
+  clearanceLevel      SecurityLevel    @default(PUBLIC)
+  location            String?
+  jobLevel            JobLevel?
+  failedLoginAttempts Int              @default(0)
+  isLocked            Boolean          @default(false)
+  mfaSecret           String?
+  emailVerified       Boolean          @default(false)
+  emailVerificationToken String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  // Relations
+  ownedResources      Resource[]       @relation("ResourceOwner")
+  dacPermissions      DACPermission[]
+  sessions            Session[]
+  auditLogs           AuditLog[]
+  grantedPermissions  DACPermission[]  @relation("PermissionGrantedBy")
+  backups             BackupMetadata[]
+  roleChanges         AuditLog[]       @relation("RoleChangeBy")
+
+  @@index([email])
+  @@index([roleId])
+  @@index([department])
+}
+
+// 2. Roles Table
+model Role {
+  id            String           @id @default(cuid())
+  roleName      String           @unique
+  description   String?
+  createdAt     DateTime         @default(now())
+
+  // Relations
+  users         User[]
+  permissions   RolePermission[]
+
+  @@index([roleName])
+}
+
+// 3. RolePermissions Table
+model RolePermission {
+  id            String   @id @default(cuid())
+  roleId        String
+  role          Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionName String
+  allowed       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  @@unique([roleId, permissionName])
+  @@index([roleId])
+}
+
+// 4. Resources Table
+model Resource {
+  id            String         @id @default(cuid())
+  title         String
+  ownerId       String
+  owner         User           @relation("ResourceOwner", fields: [ownerId], references: [id])
+  securityLevel SecurityLevel  @default(PUBLIC)
+  department    String?
+  filePath      String?
+  fileSize      Int?
+  mimeType      String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Relations
+  dacPermissions DACPermission[]
+  auditLogs      AuditLog[]
+
+  @@index([ownerId])
+  @@index([securityLevel])
+  @@index([department])
+}
+
+// 5. DAC_Permissions Table
+model DACPermission {
+  id          String   @id @default(cuid())
+  resourceId  String
+  resource    Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  canView     Boolean  @default(false)
+  canEdit     Boolean  @default(false)
+  canShare    Boolean  @default(false)
+  grantedBy   String
+  grantedByUser User   @relation("PermissionGrantedBy", fields: [grantedBy], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([resourceId, userId])
+  @@index([resourceId])
+  @@index([userId])
+}
+
+// 6. Rules Table
+model Rule {
+  id            String     @id @default(cuid())
+  ruleName      String     @unique
+  conditionJson Json       // Example: { "time": "workHours", "department": "HR" }
+  action        RuleAction @default(DENY)
+  description   String?
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([isActive])
+}
+
+// 7. Sessions Table
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshToken String   @unique
+  expiresAt    DateTime
+  ipAddress    String?
+  deviceInfo   String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([refreshToken])
+  @@index([expiresAt])
+}
+
+// 8. AuditLogs Table
+model AuditLog {
+  id           String     @id @default(cuid())
+  userId       String?
+  user         User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action       String     // e.g., "view", "edit", "delete", "login", "role_change"
+  resourceId   String?
+  resource     Resource?  @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  resourceType String?    // e.g., "document", "user", "role"
+  timestamp    DateTime   @default(now())
+  ipAddress    String?
+  status       LogStatus  @default(SUCCESS)
+  details      Json?      // Additional context
+  changedBy    String?
+  changedByUser User?     @relation("RoleChangeBy", fields: [changedBy], references: [id], onDelete: SetNull)
+  createdAt    DateTime   @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([resourceId])
+  @@index([timestamp])
+  @@index([status])
+}
+
+// 9. BackupMetadata Table
+model BackupMetadata {
+  id          String       @id @default(cuid())
+  backupPath  String
+  backupSize  BigInt?
+  timestamp   DateTime     @default(now())
+  createdBy   String
+  creator     User         @relation(fields: [createdBy], references: [id])
+  status      BackupStatus @default(SUCCESS)
+  createdAt   DateTime     @default(now())
+
+  @@index([createdBy])
+  @@index([timestamp])
+}
+
