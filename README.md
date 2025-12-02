@@ -6,44 +6,51 @@ A full-stack enterprise system implementing all 5 access control models (MAC, DA
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - Docker and Docker Compose
 - PostgreSQL client tools (for backups)
 
 ### Installation
 
 1. **Clone/Navigate to project:**
+
    ```bash
    cd usedams
    ```
 
 2. **Install dependencies:**
+
    ```bash
    npm install
    ```
 
 3. **Start PostgreSQL database:**
+
    ```bash
    docker-compose up -d
    ```
 
 4. **Set up environment variables:**
+
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
    ```
 
 5. **Run database migrations:**
+
    ```bash
    npx prisma migrate dev
    ```
 
 6. **Seed the database:**
+
    ```bash
    npm run db:seed
    ```
 
 7. **Start development server:**
+
    ```bash
    npm run dev
    ```
@@ -56,6 +63,7 @@ A full-stack enterprise system implementing all 5 access control models (MAC, DA
 ## 🔑 Default Credentials
 
 **Admin Account:**
+
 - Email: `admin@usedams.com`
 - Password: `admin123`
 
@@ -66,19 +74,23 @@ A full-stack enterprise system implementing all 5 access control models (MAC, DA
 ### ✅ Access Control Models
 
 1. **MAC (Mandatory Access Control)**
+
    - Security levels: PUBLIC, INTERNAL, CONFIDENTIAL
    - Clearance level checking
 
 2. **DAC (Discretionary Access Control)**
+
    - Resource ownership
    - Permission granting/revoking
    - View/Edit/Share permissions
 
 3. **RBAC (Role-Based Access Control)**
+
    - Role-permission mapping
    - 5 default roles: ADMIN, HR_MANAGER, FINANCE_MANAGER, DEPARTMENT_MANAGER, EMPLOYEE
 
 4. **RuBAC (Rule-Based Access Control)**
+
    - Time-based rules (working hours)
    - Department-based rules
    - IP-based rules
@@ -160,15 +172,18 @@ The system uses PostgreSQL with 9 tables:
 ## 📚 API Endpoints
 
 ### Authentication
+
 - `POST /api/auth/register` - User registration
 - `POST /api/auth/login` - User login
 - `POST /api/auth/logout` - User logout
 
 ### Logs (Admin only)
+
 - `GET /api/logs` - Get audit logs
 - `GET /api/logs/export` - Export logs (CSV/JSON)
 
 ### Backups (Admin only)
+
 - `GET /api/backups` - List backups
 - `POST /api/backups` - Create backup
 - `GET /api/backups/[id]` - Get backup details
