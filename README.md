@@ -1,36 +1,225 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# USEDAMS - Unified Secure Employee & Document Access Management System
 
-## Getting Started
+A full-stack enterprise system implementing all 5 access control models (MAC, DAC, RBAC, RuBAC, ABAC) with authentication, logging, and backup capabilities.
 
-First, run the development server:
+## 🚀 Quick Start
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### Prerequisites
+
+- Node.js 18+ 
+- Docker and Docker Compose
+- PostgreSQL client tools (for backups)
+
+### Installation
+
+1. **Clone/Navigate to project:**
+   ```bash
+   cd usedams
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Start PostgreSQL database:**
+   ```bash
+   docker-compose up -d
+   ```
+
+4. **Set up environment variables:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+5. **Run database migrations:**
+   ```bash
+   npx prisma migrate dev
+   ```
+
+6. **Seed the database:**
+   ```bash
+   npm run db:seed
+   ```
+
+7. **Start development server:**
+   ```bash
+   npm run dev
+   ```
+
+8. **Open your browser:**
+   ```
+   http://localhost:3000
+   ```
+
+## 🔑 Default Credentials
+
+**Admin Account:**
+- Email: `admin@usedams.com`
+- Password: `admin123`
+
+⚠️ **Change the password after first login!**
+
+## 📋 Features
+
+### ✅ Access Control Models
+
+1. **MAC (Mandatory Access Control)**
+   - Security levels: PUBLIC, INTERNAL, CONFIDENTIAL
+   - Clearance level checking
+
+2. **DAC (Discretionary Access Control)**
+   - Resource ownership
+   - Permission granting/revoking
+   - View/Edit/Share permissions
+
+3. **RBAC (Role-Based Access Control)**
+   - Role-permission mapping
+   - 5 default roles: ADMIN, HR_MANAGER, FINANCE_MANAGER, DEPARTMENT_MANAGER, EMPLOYEE
+
+4. **RuBAC (Rule-Based Access Control)**
+   - Time-based rules (working hours)
+   - Department-based rules
+   - IP-based rules
+
+5. **ABAC (Attribute-Based Access Control)**
+   - User/Resource/Environment attributes
+   - Policy-based evaluation
+
+### ✅ Authentication & Security
+
+- User registration with email verification
+- Secure password hashing (bcrypt)
+- Account lockout (5 failed attempts)
+- JWT token-based authentication
+- Session management
+
+### ✅ Logging & Audit
+
+- Comprehensive audit logging
+- User activity tracking
+- System event logging
+- Log export (JSON, CSV)
+- Log filtering and search
+
+### ✅ Backup System
+
+- Manual backup creation
+- Automated cleanup (30-day retention)
+- Backup metadata tracking
+- Encrypted backups
+
+## 📁 Project Structure
+
+```
+usedams/
+├── app/
+│   ├── api/              # API routes
+│   ├── (auth)/           # Authentication pages
+│   ├── (dashboard)/      # Dashboard pages
+│   └── admin/            # Admin pages
+├── components/
+│   ├── ui/               # UI components
+│   └── dashboard/        # Dashboard components
+├── lib/
+│   ├── access-control/   # Access control models
+│   ├── auth.ts          # Authentication utilities
+│   ├── logging.ts       # Logging utilities
+│   ├── backup.ts        # Backup utilities
+│   └── middleware.ts    # Auth middleware
+├── prisma/
+│   ├── schema.prisma    # Database schema
+│   └── seed.ts          # Seed script
+└── types/
+    └── index.ts         # TypeScript types
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🗄️ Database
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The system uses PostgreSQL with 9 tables:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Users - User accounts and attributes
+2. Roles - Role definitions
+3. RolePermissions - Role-permission mapping
+4. Resources - Documents/files
+5. DAC_Permissions - Discretionary permissions
+6. Rules - Rule-based access rules
+7. Sessions - User sessions
+8. AuditLogs - Audit trail
+9. BackupMetadata - Backup records
 
-## Learn More
+## 🔧 Available Scripts
 
-To learn more about Next.js, take a look at the following resources:
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run db:seed` - Seed database with initial data
+- `npx prisma studio` - Open Prisma Studio (database GUI)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📚 API Endpoints
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Authentication
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
 
-## Deploy on Vercel
+### Logs (Admin only)
+- `GET /api/logs` - Get audit logs
+- `GET /api/logs/export` - Export logs (CSV/JSON)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Backups (Admin only)
+- `GET /api/backups` - List backups
+- `POST /api/backups` - Create backup
+- `GET /api/backups/[id]` - Get backup details
+- `DELETE /api/backups/[id]` - Delete backup
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🛡️ Security Features
+
+- Password strength validation
+- Account lockout mechanism
+- JWT token authentication
+- HttpOnly cookies
+- SQL injection prevention (Prisma)
+- XSS protection
+- CSRF protection
+- Rate limiting (recommended for production)
+
+## 🧪 Testing
+
+To test the system:
+
+1. **Login with admin credentials**
+2. **Navigate to Dashboard** - View system overview
+3. **Check Employees** - View employee list
+4. **Check Documents** - View document list
+5. **Admin Panel:**
+   - View audit logs
+   - Create backups
+   - Manage users
+
+## 📝 Notes
+
+- The system is fully functional for demonstration
+- All 5 access control models are implemented
+- Backend APIs are ready for frontend integration
+- Database is seeded with initial data
+
+## 🚧 Future Enhancements
+
+- MFA (TOTP, Email OTP)
+- Email notifications
+- File upload for documents
+- Real-time notifications
+- Advanced search
+- Report generation
+
+## 📄 License
+
+This project is for educational/demonstration purposes.
+
+---
+
+**Status:** ✅ Fully Functional  
+**Version:** 1.0.0  
+**Last Updated:** December 2024
